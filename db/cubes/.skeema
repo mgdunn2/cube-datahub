@@ -1,0 +1,9 @@
+default-character-set=utf8mb4
+default-collation=utf8mb4_0900_ai_ci
+generator=skeema:1.12.3-community
+schema=cubes
+
+[local]
+flavor=mysql:8.0
+host=127.0.0.1
+port=3306
