@@ -57,22 +57,35 @@ type Deck struct {
 
 // All third party models and conversions
 
-// ScryfallCard is a trimmed-down model for just the fields we care about.
 type ScryfallCard struct {
-	ID         string            `json:"id"`
-	Name       string            `json:"name"`
-	ManaCost   *string           `json:"mana_cost"`
-	Cmc        float64           `json:"cmc"`
-	TypeLine   string            `json:"type_line"`
-	OracleText string            `json:"oracle_text"`
-	Power      *string           `json:"power"`
-	Toughness  *string           `json:"toughness"`
-	Loyalty    *string           `json:"loyalty"`
-	Defense    *string           `json:"defense"`
-	Colors     []string          `json:"colors"`
-	Set        string            `json:"set"`
-	ReleasedAt string            `json:"released_at"`
-	ImageURIs  ScryfallImageURIs `json:"image_uris"`
+	ID         string             `json:"id"`
+	Name       string             `json:"name"`
+	ManaCost   *string            `json:"mana_cost"`
+	Cmc        float64            `json:"cmc"`
+	TypeLine   string             `json:"type_line"`
+	OracleText string             `json:"oracle_text"`
+	Power      *string            `json:"power"`
+	Toughness  *string            `json:"toughness"`
+	Loyalty    *string            `json:"loyalty"`
+	Defense    *string            `json:"defense"`
+	Colors     []string           `json:"colors"`
+	Set        string             `json:"set"`
+	ReleasedAt string             `json:"released_at"`
+	ImageURIs  *ScryfallImageURIs `json:"image_uris"`
+	CardFaces  []ScryfallCardFace `json:"card_faces"`
+}
+
+type ScryfallCardFace struct {
+	Name       string             `json:"name"`
+	ManaCost   *string            `json:"mana_cost"`
+	TypeLine   string             `json:"type_line"`
+	OracleText string             `json:"oracle_text"`
+	Power      *string            `json:"power"`
+	Toughness  *string            `json:"toughness"`
+	Loyalty    *string            `json:"loyalty"`
+	Defense    *string            `json:"defense"`
+	Colors     []string           `json:"colors"`
+	ImageURIs  *ScryfallImageURIs `json:"image_uris"`
 }
 
 type ScryfallImageURIs struct {
@@ -81,54 +94,82 @@ type ScryfallImageURIs struct {
 	Large  string `json:"large"`
 }
 
-// ToCard converts a ScryfallCard into a domain-level Card model.
 func (s ScryfallCard) ToCard() (Card, error) {
-	superTypes, cardType, subTypes := parseTypeLine(s.TypeLine)
+	var (
+		name       = s.Name
+		manaCost   = s.ManaCost
+		typeLine   = s.TypeLine
+		oracleText = s.OracleText
+		power      = s.Power
+		toughness  = s.Toughness
+		loyalty    = s.Loyalty
+		defense    = s.Defense
+		colors     = s.Colors
+		imageURIs  = s.ImageURIs
+	)
+
+	if len(s.CardFaces) > 0 {
+		face := s.CardFaces[0]
+		name = face.Name
+		manaCost = face.ManaCost
+		typeLine = face.TypeLine
+		oracleText = face.OracleText
+		power = face.Power
+		toughness = face.Toughness
+		loyalty = face.Loyalty
+		defense = face.Defense
+		colors = face.Colors
+		if face.ImageURIs != nil {
+			imageURIs = face.ImageURIs
+		}
+	}
+
+	superTypes, cardType, subTypes := parseTypeLine(typeLine)
 
 	card := Card{
 		ID:        s.ID,
-		Name:      s.Name,
-		ManaCost:  s.ManaCost,
+		Name:      name,
+		ManaCost:  manaCost,
 		ManaValue: int(s.Cmc),
 		Type:      cardType,
 		SuperType: superTypes,
 		SubType:   subTypes,
-		TextBox:   s.OracleText,
+		TextBox:   oracleText,
 		Set:       s.Set,
-		ImageURI:  s.ImageURIs.Normal,
 	}
 
-	// Parse release date
+	if imageURIs != nil {
+		card.ImageURI = imageURIs.Normal
+	}
+
 	if t, err := time.Parse("2006-01-02", s.ReleasedAt); err == nil {
 		card.ReleaseDate = t
 	} else {
 		return Card{}, err
 	}
 
-	// Parse power/toughness/loyalty/defense if numeric
-	if s.Power != nil {
-		if p, err := parseIntValue(*s.Power); err == nil {
+	if power != nil {
+		if p, err := parseIntValue(*power); err == nil {
 			card.Power = p
 		}
 	}
-	if s.Toughness != nil {
-		if t, err := parseIntValue(*s.Toughness); err == nil {
+	if toughness != nil {
+		if t, err := parseIntValue(*toughness); err == nil {
 			card.Toughness = t
 		}
 	}
-	if s.Loyalty != nil {
-		if l, err := parseIntValue(*s.Loyalty); err == nil {
+	if loyalty != nil {
+		if l, err := parseIntValue(*loyalty); err == nil {
 			card.Loyalty = l
 		}
 	}
-	if s.Defense != nil {
-		if d, err := parseIntValue(*s.Defense); err == nil {
+	if defense != nil {
+		if d, err := parseIntValue(*defense); err == nil {
 			card.Defense = d
 		}
 	}
 
-	// Convert colors
-	for _, c := range s.Colors {
+	for _, c := range colors {
 		card.Colors = append(card.Colors, Color(c))
 	}
 
