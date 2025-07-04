@@ -48,11 +48,18 @@ type Player struct {
 	Name string `json:"name"`
 }
 
+type Event struct {
+	ID   string    `json:"id"`
+	Cube Cube      `json:"cube"`
+	Date time.Time `json:"date"`
+}
+
 type Deck struct {
-	ID     string `json:"id"`
-	Player Player `json:"player"`
-	Cube   Cube   `json:"cube"`
-	Cards  []Card `json:"cards"`
+	ID          string `json:"id"`
+	PlayerID    string `json:"playerId"`
+	EventID     string `json:"eventId"`
+	Cards       []Card `json:"cards"`
+	Description string `json:"description"`
 }
 
 // All third party models and conversions

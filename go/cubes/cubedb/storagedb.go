@@ -64,11 +64,10 @@ type dbCubeCard struct {
 }
 
 type dbDeck struct {
-	ID            string `db:"id"`
-	PlayerID      string `db:"playerId"`
-	CubeID        string `db:"cubeId"`
-	VersionNumber int    `db:"versionNumber"`
-	Description   string `db:"description"`
+	ID          string `db:"id"`
+	PlayerID    string `db:"playerId"`
+	EventID     string `db:"eventId"`
+	Description string `db:"description"`
 }
 
 type dbDeckCard struct {
@@ -434,6 +433,15 @@ func (s *storage) GetCube(ctx context.Context, id string, version *int) (*cubes.
 	}, nil
 }
 
+func (s *storage) RecordEvent(ctx context.Context, event cubes.Event) error {
+	query := `INSERT IGNORE INTO events (id, cubeId, versionNumber, eventDate) VALUES (?, ?, ?, ?)`
+	_, err := s.db.ExecContext(ctx, query, event.ID, event.Cube.ID, event.Cube.VersionNumber, event.Date)
+	if err != nil {
+		return fmt.Errorf(`insert event: %w`, err)
+	}
+	return nil
+}
+
 func (s *storage) RecordDeck(ctx context.Context, deck cubes.Deck) error {
 	tx, err := s.db.BeginTxx(ctx, nil)
 	if err != nil {
@@ -442,8 +450,8 @@ func (s *storage) RecordDeck(ctx context.Context, deck cubes.Deck) error {
 	defer tx.Rollback()
 
 	_, err = tx.ExecContext(ctx,
-		`INSERT INTO decks (id, playerId, cubeId, versionNumber, description) VALUES (?, ?, ?, ?, ?)`,
-		deck.ID, deck.Player.ID, deck.Cube.ID, deck.Cube.VersionNumber, deck.Player.Name)
+		`INSERT INTO decks (id, playerId, eventId, description) VALUES (?, ?, ?, ?)`,
+		deck.ID, deck.PlayerID, deck.EventID, deck.Description)
 	if err != nil {
 		return err
 	}

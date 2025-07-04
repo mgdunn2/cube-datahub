@@ -27,6 +27,9 @@ type Storage interface {
 	// GetCube returns the cube at the specified version or the most recent if no version is provided
 	GetCube(ctx context.Context, id string, version *int) (*Cube, error)
 
+	// RecordEvent stores a cube event
+	RecordEvent(ctx context.Context, event Event) error
+
 	// RecordDeck stores a deck
 	RecordDeck(ctx context.Context, deck Deck) error
 }
