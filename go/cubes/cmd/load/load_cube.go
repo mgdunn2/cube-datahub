@@ -8,16 +8,23 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/mgdunn2/cube-datahub/cubes/cards"
 	"github.com/mgdunn2/cube-datahub/cubes/cubedb"
+	"github.com/mgdunn2/cube-datahub/cubes/llm"
+	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/option"
 	"log"
+	"os"
 )
 
 func main() {
 	ctx := context.Background()
 	db := mustDb("local")
 	storage := cubedb.NewStorage(db)
+	openAiApiKey := os.Getenv("OPENAI_API_KEY")
+	client := openai.NewClient(option.WithAPIKey(openAiApiKey))
+	imageReader := llm.NewOpenAi(client)
+	ccr := cards.NewLLMCustomCardReader(imageReader)
 	cardLoader := cards.NewScryfallLoader(storage)
-
-	cubeLoader := cards.NewCubeCobraLoader(storage, cardLoader)
+	cubeLoader := cards.NewCubeCobraLoader(storage, cardLoader, ccr)
 	err := cubeLoader.Load(ctx, "b5e2e43a-a780-4b90-98bf-8097eaf7ff0f")
 	if err != nil {
 		log.Fatal(fmt.Errorf(`load cube: %w`, err))

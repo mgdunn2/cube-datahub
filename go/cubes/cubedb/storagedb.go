@@ -76,6 +76,11 @@ type dbDeckCard struct {
 	CardID string `db:"cardId"`
 }
 
+type dbCustomCard struct {
+	ImageURL string `db:"imageUrl"`
+	CardID   string `db:"cardId"`
+}
+
 // --- Conversion Helpers ---
 
 func cardToDB(c cubes.Card) (*dbCard, error) {
@@ -311,6 +316,35 @@ ON DUPLICATE KEY UPDATE
 
 	_, err := tx.ExecContext(ctx, stmt, args...)
 	return err
+}
+
+func (s *storage) AddCustomCard(ctx context.Context, imageURL, cardID string) error {
+	query := `
+INSERT IGNORE INTO custom_cards (imageUrl, cardId) VALUES (?, ?)`
+	_, err := s.db.ExecContext(ctx, query, []any{imageURL, cardID})
+	if err != nil {
+		return fmt.Errorf(`insert custom cards: %w`, err)
+	}
+	return nil
+}
+
+func (s *storage) GetAllCustomCardIDs(ctx context.Context) (map[string]string, error) {
+	type customCardRow struct {
+		ImageURL string `db:"imageUrl"`
+		CardID   string `db:"cardId"`
+	}
+	query := `
+SELECT imageURL, cardId FROM custom_cards`
+	var rows []customCardRow
+	err := s.db.SelectContext(ctx, rows, query)
+	if err != nil {
+		return map[string]string{}, fmt.Errorf(`select custom cards: %w`, err)
+	}
+	customMapping := make(map[string]string)
+	for _, r := range rows {
+		customMapping[r.ImageURL] = r.CardID
+	}
+	return customMapping, nil
 }
 
 func (s *storage) UpdateCube(ctx context.Context, cube cubes.Cube) error {

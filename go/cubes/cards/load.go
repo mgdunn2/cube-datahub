@@ -5,11 +5,13 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/mgdunn2/cube-datahub/cubes"
 	"io"
 	"log"
 	"net/http"
+	"slices"
 	"time"
 )
 
@@ -124,9 +126,10 @@ type CubeLoader interface {
 }
 
 type CubeCobraLoader struct {
-	client     *http.Client
-	storage    cubes.Storage
-	cardLoader CardLoader
+	client           *http.Client
+	storage          cubes.Storage
+	cardLoader       CardLoader
+	customCardReader CustomCardReader
 }
 
 type CubeCobraLoaderOpts func(*CubeCobraLoader)
@@ -137,10 +140,11 @@ func CubeLoaderWithClient(client http.Client) CubeCobraLoaderOpts {
 	}
 }
 
-func NewCubeCobraLoader(storage cubes.Storage, cardLoader CardLoader, opts ...CubeCobraLoaderOpts) *CubeCobraLoader {
+func NewCubeCobraLoader(storage cubes.Storage, cardLoader CardLoader, customCardReader CustomCardReader, opts ...CubeCobraLoaderOpts) *CubeCobraLoader {
 	loader := &CubeCobraLoader{
-		storage:    storage,
-		cardLoader: cardLoader,
+		storage:          storage,
+		cardLoader:       cardLoader,
+		customCardReader: customCardReader,
 	}
 	for _, opt := range opts {
 		opt(loader)
@@ -168,15 +172,32 @@ func (c *CubeCobraLoader) Load(ctx context.Context, cubeID string) error {
 	if err := json.Unmarshal(bodyBytes, &cubeCobraCube); err != nil {
 		return fmt.Errorf(`unmarshal: %w`, err)
 	}
-	cardIDs := make([]string, len(cubeCobraCube.Cards.MainBoard))
-	for i, card := range cubeCobraCube.Cards.MainBoard {
-		cardIDs[i] = card.ID
+
+	customMappings, err := c.storage.GetAllCustomCardIDs(ctx)
+	if err != nil {
+		return fmt.Errorf(`getting custom mappings: %w`, err)
+	}
+
+	var cardIDs []string
+	var customCardIDs []string
+	for _, card := range cubeCobraCube.Cards.MainBoard {
+		if slices.Index(card.Tags, "custom") != -1 {
+			customCard, err := c.handleCustom(ctx, card.ImageURL, customMappings)
+			if err != nil {
+				return fmt.Errorf(`handle custom: %w`, err)
+			}
+			customCardIDs = append(customCardIDs, customCard.ID)
+		} else {
+			cardIDs = append(cardIDs, card.Details.ScyfallID)
+		}
 	}
 	err = c.cardLoader.LoadCards(ctx, cardIDs)
 	if err != nil {
 		return fmt.Errorf(`load cards: %w`, err)
 	}
-	cards, err := c.storage.GetByIDs(ctx, cardIDs)
+	var allCardIDs []string
+	allCardIDs = append(cardIDs, customCardIDs...)
+	cards, err := c.storage.GetByIDs(ctx, allCardIDs)
 
 	currentCube, err := c.storage.GetCube(ctx, cubeID, nil)
 	if err != nil {
@@ -201,6 +222,35 @@ func (c *CubeCobraLoader) Load(ctx context.Context, cubeID string) error {
 		return fmt.Errorf(`update cube: %w`, err)
 	}
 	return nil
+}
+
+func (c *CubeCobraLoader) handleCustom(ctx context.Context, imageURL string, customMappings map[string]string) (cubes.Card, error) {
+	if cardID, ok := customMappings[imageURL]; ok {
+		cards, err := c.storage.GetByIDs(ctx, []string{cardID})
+		if err != nil {
+			return cubes.Card{}, fmt.Errorf(`get by id: %w`, err)
+		}
+		if len(cards) != 1 {
+			return cubes.Card{}, errors.New(`custom card with mapping not found`)
+		}
+		return cards[0], nil
+	}
+	card, err := c.customCardReader.ReadCard(ctx, imageURL)
+	if err != nil {
+		return cubes.Card{}, fmt.Errorf(`read card: %w`, err)
+	}
+	cardID := "uuid.New()" // Placeholder for importing google uuid
+	card.ID = cardID
+	err = c.storage.AddCustomCard(ctx, imageURL, cardID)
+	if err != nil {
+		return cubes.Card{}, fmt.Errorf(`add custom card: %w`, err)
+	}
+	err = c.storage.UpsertCards(ctx, []cubes.Card{card})
+	if err != nil {
+		return cubes.Card{}, fmt.Errorf(`upsert card: %w`, err)
+	}
+
+	return card, nil
 }
 
 func hasChanges(a, b []cubes.Card) bool {

@@ -279,8 +279,10 @@ type CubeCobraCards struct {
 }
 
 type CubeCobraCard struct {
-	ID      string              `json:"cardID"`
-	Details CubeCobraCardDetail `json:"details"`
+	ID       string              `json:"cardID"`
+	Details  CubeCobraCardDetail `json:"details"`
+	Tags     []string            `json:"tags"`
+	ImageURL string              `json:"imgUrl"`
 }
 
 type CubeCobraCardDetail struct {

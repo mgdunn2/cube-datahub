@@ -15,6 +15,12 @@ type Storage interface {
 	// UpsertCards upserts a set of cards
 	UpsertCards(ctx context.Context, cards []Card) error
 
+	// AddCustomCard adds a mapping from an imageURL to the cardID for that card
+	AddCustomCard(ctx context.Context, imageURL, cardID string) error
+
+	// GetAllCustomCardIDs returns all custom card ID mappings ImageURL -> CardID
+	GetAllCustomCardIDs(ctx context.Context) (map[string]string, error)
+
 	// UpdateCube adds a new version of the cube
 	UpdateCube(ctx context.Context, cube Cube) error
 
