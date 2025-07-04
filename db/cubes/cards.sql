@@ -14,5 +14,6 @@ CREATE TABLE cards (
   `colors` JSON,
   `exp` VARCHAR(31) NOT NULL,
   `release_date` DATE NOT NULL,
+  `image_url` VARCHAR(512) NOT NULL,
   KEY `name` (`name`)
 );

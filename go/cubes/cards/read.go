@@ -110,6 +110,8 @@ The mana cost of a Magic: The Gathering card is represented as a string of curly
 	if err != nil {
 		return cubes.Card{}, fmt.Errorf(`to card: %w`, err)
 	}
+	// Add the image URL!
+	card.ImageURI = imageURL
 	return card, nil
 }
 

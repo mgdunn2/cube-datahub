@@ -37,6 +37,7 @@ type dbCard struct {
 	Colors      sql.NullString `db:"colors"`
 	Set         string         `db:"exp"`
 	ReleaseDate time.Time      `db:"release_date"`
+	ImageURL    string         `db:"image_url"`
 }
 
 type dbPlayer struct {
@@ -98,6 +99,7 @@ func cardToDB(c cubes.Card) (*dbCard, error) {
 		Colors:      nullJSONString(colors),
 		Set:         c.Set,
 		ReleaseDate: c.ReleaseDate,
+		ImageURL:    c.ImageURI,
 	}, nil
 }
 
@@ -129,6 +131,7 @@ func dbToCard(c dbCard) (cubes.Card, error) {
 		Colors:      colors,
 		Set:         c.Set,
 		ReleaseDate: c.ReleaseDate,
+		ImageURI:    c.ImageURL,
 	}, nil
 }
 
@@ -270,7 +273,7 @@ func (s *storage) upsertCardBatch(ctx context.Context, tx *sql.Tx, cards []cubes
 		}
 
 		// Append placeholders for one row
-		valueStrings = append(valueStrings, "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+		valueStrings = append(valueStrings, "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 
 		// Add all fields in order
 		args = append(args,
@@ -289,19 +292,21 @@ func (s *storage) upsertCardBatch(ctx context.Context, tx *sql.Tx, cards []cubes
 			dbCard.Colors,
 			dbCard.Set,
 			dbCard.ReleaseDate,
+			dbCard.ImageURL,
 		)
 	}
 
 	stmt := `
 INSERT INTO cards (
 	id, name, mana_cost, mana_value, type, super_type, sub_type, text_box,
-	power, toughness, loyalty, defense, colors, exp, release_date
+	power, toughness, loyalty, defense, colors, exp, release_date, image_url
 ) VALUES ` + strings.Join(valueStrings, ",") + `
 ON DUPLICATE KEY UPDATE
 	name=VALUES(name), mana_cost=VALUES(mana_cost), mana_value=VALUES(mana_value),
 	type=VALUES(type), super_type=VALUES(super_type), sub_type=VALUES(sub_type), text_box=VALUES(text_box),
 	power=VALUES(power), toughness=VALUES(toughness), loyalty=VALUES(loyalty),
-	defense=VALUES(defense), colors=VALUES(colors), exp=VALUES(exp), release_date=VALUES(release_date)
+	defense=VALUES(defense), colors=VALUES(colors), exp=VALUES(exp), release_date=VALUES(release_date),
+    image_url=VALUES(image_url)
 `
 
 	_, err := tx.ExecContext(ctx, stmt, args...)

@@ -32,6 +32,7 @@ type Card struct {
 	Colors      []Color   `json:"colors"`
 	Set         string    `json:"set"`
 	ReleaseDate time.Time `json:"release_date"`
+	ImageURI    string    `json:"image_uri"`
 }
 
 type Cube struct {
@@ -58,19 +59,26 @@ type Deck struct {
 
 // ScryfallCard is a trimmed-down model for just the fields we care about.
 type ScryfallCard struct {
-	ID         string   `json:"id"`
-	Name       string   `json:"name"`
-	ManaCost   *string  `json:"mana_cost"`
-	Cmc        float64  `json:"cmc"`
-	TypeLine   string   `json:"type_line"`
-	OracleText string   `json:"oracle_text"`
-	Power      *string  `json:"power"`
-	Toughness  *string  `json:"toughness"`
-	Loyalty    *string  `json:"loyalty"`
-	Defense    *string  `json:"defense"`
-	Colors     []string `json:"colors"`
-	Set        string   `json:"set"`
-	ReleasedAt string   `json:"released_at"`
+	ID         string            `json:"id"`
+	Name       string            `json:"name"`
+	ManaCost   *string           `json:"mana_cost"`
+	Cmc        float64           `json:"cmc"`
+	TypeLine   string            `json:"type_line"`
+	OracleText string            `json:"oracle_text"`
+	Power      *string           `json:"power"`
+	Toughness  *string           `json:"toughness"`
+	Loyalty    *string           `json:"loyalty"`
+	Defense    *string           `json:"defense"`
+	Colors     []string          `json:"colors"`
+	Set        string            `json:"set"`
+	ReleasedAt string            `json:"released_at"`
+	ImageURIs  ScryfallImageURIs `json:"image_uris"`
+}
+
+type ScryfallImageURIs struct {
+	Small  string `json:"small"`
+	Normal string `json:"normal"`
+	Large  string `json:"large"`
 }
 
 // ToCard converts a ScryfallCard into a domain-level Card model.
@@ -87,6 +95,7 @@ func (s ScryfallCard) ToCard() (Card, error) {
 		SubType:   subTypes,
 		TextBox:   s.OracleText,
 		Set:       s.Set,
+		ImageURI:  s.ImageURIs.Normal,
 	}
 
 	// Parse release date
