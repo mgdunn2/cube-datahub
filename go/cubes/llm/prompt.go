@@ -8,7 +8,7 @@ import (
 	"github.com/openai/openai-go/packages/param"
 )
 
-type LLMImageReader interface {
+type ImageReader interface {
 	Generate(ctx context.Context, req Request) (string, error)
 }
 
@@ -33,7 +33,7 @@ type ToolSchema struct {
 	Schema      map[string]any
 }
 
-func (o *OpenAi) Generate(ctx context.Context, req Request) (string, error) {
+func (o OpenAi) Generate(ctx context.Context, req Request) (string, error) {
 	res, err := o.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 		Model: "gpt-4o",
 		Messages: []openai.ChatCompletionMessageParamUnion{

@@ -29,6 +29,7 @@ type dbCard struct {
 	Type        string         `db:"type"`
 	SuperType   sql.NullString `db:"super_type"`
 	SubType     sql.NullString `db:"sub_type"`
+	TextBox     string         `db:"text_box"`
 	Power       sql.NullInt64  `db:"power"`
 	Toughness   sql.NullInt64  `db:"toughness"`
 	Loyalty     sql.NullInt64  `db:"loyalty"`
@@ -89,6 +90,7 @@ func cardToDB(c cubes.Card) (*dbCard, error) {
 		Type:        c.Type,
 		SuperType:   nullJSONString(superType),
 		SubType:     nullJSONString(subType),
+		TextBox:     c.TextBox,
 		Power:       nullInt(c.Power),
 		Toughness:   nullInt(c.Toughness),
 		Loyalty:     nullInt(c.Loyalty),
@@ -119,6 +121,7 @@ func dbToCard(c dbCard) (cubes.Card, error) {
 		Type:        c.Type,
 		SuperType:   superType,
 		SubType:     subType,
+		TextBox:     c.TextBox,
 		Power:       intOrZero(c.Power),
 		Toughness:   intOrZero(c.Toughness),
 		Loyalty:     intOrZero(c.Loyalty),
@@ -267,7 +270,7 @@ func (s *storage) upsertCardBatch(ctx context.Context, tx *sql.Tx, cards []cubes
 		}
 
 		// Append placeholders for one row
-		valueStrings = append(valueStrings, "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+		valueStrings = append(valueStrings, "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 
 		// Add all fields in order
 		args = append(args,
@@ -278,6 +281,7 @@ func (s *storage) upsertCardBatch(ctx context.Context, tx *sql.Tx, cards []cubes
 			dbCard.Type,
 			dbCard.SuperType,
 			dbCard.SubType,
+			dbCard.TextBox,
 			dbCard.Power,
 			dbCard.Toughness,
 			dbCard.Loyalty,
@@ -290,12 +294,12 @@ func (s *storage) upsertCardBatch(ctx context.Context, tx *sql.Tx, cards []cubes
 
 	stmt := `
 INSERT INTO cards (
-	id, name, mana_cost, mana_value, type, super_type, sub_type,
+	id, name, mana_cost, mana_value, type, super_type, sub_type, text_box,
 	power, toughness, loyalty, defense, colors, exp, release_date
 ) VALUES ` + strings.Join(valueStrings, ",") + `
 ON DUPLICATE KEY UPDATE
 	name=VALUES(name), mana_cost=VALUES(mana_cost), mana_value=VALUES(mana_value),
-	type=VALUES(type), super_type=VALUES(super_type), sub_type=VALUES(sub_type),
+	type=VALUES(type), super_type=VALUES(super_type), sub_type=VALUES(sub_type), text_box=VALUES(text_box),
 	power=VALUES(power), toughness=VALUES(toughness), loyalty=VALUES(loyalty),
 	defense=VALUES(defense), colors=VALUES(colors), exp=VALUES(exp), release_date=VALUES(release_date)
 `

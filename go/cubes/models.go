@@ -24,6 +24,7 @@ type Card struct {
 	Type        string    `json:"type"`
 	SuperType   []string  `json:"super_type"`
 	SubType     []string  `json:"sub_type"`
+	TextBox     string    `json:"text_box"`
 	Power       int       `json:"power"`
 	Toughness   int       `json:"toughness"`
 	Loyalty     int       `json:"loyalty"`
@@ -62,6 +63,7 @@ type ScryfallCard struct {
 	ManaCost   *string  `json:"mana_cost"`
 	Cmc        float64  `json:"cmc"`
 	TypeLine   string   `json:"type_line"`
+	OracleText string   `json:"oracle_text"`
 	Power      *string  `json:"power"`
 	Toughness  *string  `json:"toughness"`
 	Loyalty    *string  `json:"loyalty"`
@@ -83,6 +85,7 @@ func (s ScryfallCard) ToCard() (Card, error) {
 		Type:      cardType,
 		SuperType: superTypes,
 		SubType:   subTypes,
+		TextBox:   s.OracleText,
 		Set:       s.Set,
 	}
 
@@ -113,6 +116,58 @@ func (s ScryfallCard) ToCard() (Card, error) {
 		if d, err := parseIntValue(*s.Defense); err == nil {
 			card.Defense = d
 		}
+	}
+
+	// Convert colors
+	for _, c := range s.Colors {
+		card.Colors = append(card.Colors, Color(c))
+	}
+
+	return card, nil
+}
+
+// LLMCardSchema exists purely for being converted into an OpenAI request json schema
+type LLMCardSchema struct {
+	ID         string   `json:"id"`
+	Name       string   `json:"name"`
+	ManaCost   *string  `json:"mana_cost"`
+	Cmc        float64  `json:"cmc"`
+	TypeLine   string   `json:"type_line"`
+	OracleText string   `json:"oracle_text"`
+	Power      int      `json:"power"`
+	Toughness  int      `json:"toughness"`
+	Loyalty    int      `json:"loyalty"`
+	Defense    int      `json:"defense"`
+	Colors     []string `json:"colors"`
+	Set        string   `json:"set"`
+	ReleasedAt string   `json:"released_at"`
+}
+
+// ToCard converts a ScryfallCard into a domain-level Card model.
+func (s LLMCardSchema) ToCard() (Card, error) {
+	superTypes, cardType, subTypes := parseTypeLine(s.TypeLine)
+
+	card := Card{
+		ID:        s.ID,
+		Name:      s.Name,
+		ManaCost:  s.ManaCost,
+		ManaValue: int(s.Cmc),
+		Type:      cardType,
+		SuperType: superTypes,
+		SubType:   subTypes,
+		TextBox:   s.OracleText,
+		Power:     s.Power,
+		Toughness: s.Toughness,
+		Loyalty:   s.Loyalty,
+		Defense:   s.Defense,
+		Set:       s.Set,
+	}
+
+	// Parse release date
+	if t, err := time.Parse("2006-01-02", s.ReleasedAt); err == nil {
+		card.ReleaseDate = t
+	} else {
+		return Card{}, err
 	}
 
 	// Convert colors

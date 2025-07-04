@@ -6,6 +6,7 @@ CREATE TABLE cards (
   `type` VARCHAR(64) NOT NULL,
   `super_type` JSON,
   `sub_type` JSON,
+  `text_box` TEXT,
   `power` int,
   `toughness` int,
   `loyalty` int,
