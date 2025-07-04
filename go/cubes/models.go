@@ -19,16 +19,16 @@ const (
 type Card struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
-	ManaCost    *string   `json:"mana_cost,omitempty"`
-	ManaValue   int       `json:"mana_value,omitempty"`
+	ManaCost    *string   `json:"mana_cost"`
+	ManaValue   int       `json:"mana_value"`
 	Type        string    `json:"type"`
-	SuperType   []string  `json:"super_type,omitempty"`
-	SubType     []string  `json:"sub_type,omitempty"`
-	Power       int       `json:"power,omitempty"`
-	Toughness   int       `json:"toughness,omitempty"`
-	Loyalty     int       `json:"loyalty,omitempty"`
-	Defense     int       `json:"defense,omitempty"`
-	Colors      []Color   `json:"colors,omitempty"`
+	SuperType   []string  `json:"super_type"`
+	SubType     []string  `json:"sub_type"`
+	Power       int       `json:"power"`
+	Toughness   int       `json:"toughness"`
+	Loyalty     int       `json:"loyalty"`
+	Defense     int       `json:"defense"`
+	Colors      []Color   `json:"colors"`
 	Set         string    `json:"set"`
 	ReleaseDate time.Time `json:"release_date"`
 }

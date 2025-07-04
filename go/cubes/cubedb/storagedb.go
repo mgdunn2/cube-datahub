@@ -326,14 +326,19 @@ func (s *storage) UpdateCube(ctx context.Context, cube cubes.Cube) error {
 	}
 
 	if len(cube.Cards) > 0 {
-		valueStrings := make([]string, 0, len(cube.Cards))
-		args := make([]interface{}, 0, len(cube.Cards)*3)
+		counts := make(map[string]int)
 		for _, card := range cube.Cards {
-			valueStrings = append(valueStrings, "(?, ?, ?)")
-			args = append(args, cube.ID, cube.VersionNumber, card.ID)
+			counts[card.ID]++
 		}
 
-		stmt := `INSERT INTO cube_cards (cubeId, versionNumber, cardId) VALUES ` + strings.Join(valueStrings, ",")
+		valueStrings := make([]string, 0, len(counts))
+		args := make([]interface{}, 0, len(counts)*4)
+		for cardID, count := range counts {
+			valueStrings = append(valueStrings, "(?, ?, ?, ?)")
+			args = append(args, cube.ID, cube.VersionNumber, cardID, count)
+		}
+
+		stmt := `INSERT INTO cube_cards (cubeId, versionNumber, cardId, count) VALUES ` + strings.Join(valueStrings, ",")
 		if _, err := tx.ExecContext(ctx, stmt, args...); err != nil {
 			return fmt.Errorf(`insert cube cards batch: %w`, err)
 		}
