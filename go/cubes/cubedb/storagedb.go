@@ -320,7 +320,7 @@ ON DUPLICATE KEY UPDATE
 func (s *storage) AddCustomCard(ctx context.Context, imageURL, cardID string) error {
 	query := `
 INSERT IGNORE INTO custom_cards (imageUrl, cardId) VALUES (?, ?)`
-	_, err := s.db.ExecContext(ctx, query, []any{imageURL, cardID})
+	_, err := s.db.ExecContext(ctx, query, []any{imageURL, cardID}...)
 	if err != nil {
 		return fmt.Errorf(`insert custom cards: %w`, err)
 	}
@@ -333,9 +333,9 @@ func (s *storage) GetAllCustomCardIDs(ctx context.Context) (map[string]string, e
 		CardID   string `db:"cardId"`
 	}
 	query := `
-SELECT imageURL, cardId FROM custom_cards`
+SELECT imageUrl, cardId FROM custom_cards`
 	var rows []customCardRow
-	err := s.db.SelectContext(ctx, rows, query)
+	err := s.db.SelectContext(ctx, &rows, query)
 	if err != nil {
 		return map[string]string{}, fmt.Errorf(`select custom cards: %w`, err)
 	}

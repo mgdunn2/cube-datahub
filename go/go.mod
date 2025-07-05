@@ -4,6 +4,7 @@ go 1.24
 
 require (
 	github.com/go-sql-driver/mysql v1.8.1
+	github.com/google/uuid v1.6.0
 	github.com/invopop/jsonschema v0.13.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/openai/openai-go v1.8.2

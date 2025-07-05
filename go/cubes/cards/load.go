@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/mgdunn2/cube-datahub/cubes"
 	"io"
 	"log"
@@ -182,13 +183,14 @@ func (c *CubeCobraLoader) Load(ctx context.Context, cubeID string) error {
 	var customCardIDs []string
 	for _, card := range cubeCobraCube.Cards.MainBoard {
 		if slices.Index(card.Tags, "custom") != -1 {
+			fmt.Printf("Loading custom card: %v\n", card)
 			customCard, err := c.handleCustom(ctx, card.ImageURL, customMappings)
 			if err != nil {
 				return fmt.Errorf(`handle custom: %w`, err)
 			}
 			customCardIDs = append(customCardIDs, customCard.ID)
 		} else {
-			cardIDs = append(cardIDs, card.Details.ScyfallID)
+			cardIDs = append(cardIDs, card.ID)
 		}
 	}
 	err = c.cardLoader.LoadCards(ctx, cardIDs)
@@ -239,7 +241,11 @@ func (c *CubeCobraLoader) handleCustom(ctx context.Context, imageURL string, cus
 	if err != nil {
 		return cubes.Card{}, fmt.Errorf(`read card: %w`, err)
 	}
-	cardID := "uuid.New()" // Placeholder for importing google uuid
+	cardUUID, err := uuid.NewV7()
+	if err != nil {
+		return cubes.Card{}, fmt.Errorf(`new uuid: %w`, err)
+	}
+	cardID := cardUUID.String()
 	card.ID = cardID
 	err = c.storage.AddCustomCard(ctx, imageURL, cardID)
 	if err != nil {

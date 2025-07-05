@@ -19,7 +19,7 @@ func main() {
 	client := openai.NewClient(option.WithAPIKey(openAiApiKey))
 	imageReader := llm.NewOpenAi(client)
 	ccr := cards.NewLLMCustomCardReader(imageReader)
-	card, err := ccr.ReadCard(ctx, `https://i.imgur.com/3KY9Lyt.png`)
+	card, err := ccr.ReadCard(ctx, `https://i.imgur.com/hcbSX8l.png`)
 	if err != nil {
 		log.Fatal(fmt.Errorf(`read card: %w`, err))
 	}

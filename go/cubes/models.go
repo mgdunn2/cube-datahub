@@ -224,7 +224,8 @@ func (s LLMCardSchema) ToCard() (Card, error) {
 	if t, err := time.Parse("2006-01-02", s.ReleasedAt); err == nil {
 		card.ReleaseDate = t
 	} else {
-		return Card{}, err
+		// Especially for custom cards, don't bother trying to get a correct date
+		card.ReleaseDate = time.Now()
 	}
 
 	// Convert colors

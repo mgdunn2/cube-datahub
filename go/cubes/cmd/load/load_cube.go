@@ -25,7 +25,7 @@ func main() {
 	ccr := cards.NewLLMCustomCardReader(imageReader)
 	cardLoader := cards.NewScryfallLoader(storage)
 	cubeLoader := cards.NewCubeCobraLoader(storage, cardLoader, ccr)
-	err := cubeLoader.Load(ctx, "b5e2e43a-a780-4b90-98bf-8097eaf7ff0f")
+	err := cubeLoader.Load(ctx, "da519447-9b91-4eac-a6d6-8a263f42e093")
 	if err != nil {
 		log.Fatal(fmt.Errorf(`load cube: %w`, err))
 	}
