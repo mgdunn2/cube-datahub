@@ -57,7 +57,7 @@ type Event struct {
 type Deck struct {
 	ID          string `json:"id"`
 	PlayerID    string `json:"playerId"`
-	EventID     string `json:"eventId"`
+	Event       Event  `json:"event"`
 	Cards       []Card `json:"cards"`
 	Description string `json:"description"`
 }
@@ -295,4 +295,8 @@ type CubeCobraCard struct {
 
 type CubeCobraCardDetail struct {
 	ScyfallID string `json:"scryfall_id	"`
+}
+
+type LLMDeckSchema struct {
+	CardNames []string `json:"card_names"`
 }

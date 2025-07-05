@@ -451,7 +451,7 @@ func (s *storage) RecordDeck(ctx context.Context, deck cubes.Deck) error {
 
 	_, err = tx.ExecContext(ctx,
 		`INSERT INTO decks (id, playerId, eventId, description) VALUES (?, ?, ?, ?)`,
-		deck.ID, deck.PlayerID, deck.EventID, deck.Description)
+		deck.ID, deck.PlayerID, deck.Event.ID, deck.Description)
 	if err != nil {
 		return err
 	}

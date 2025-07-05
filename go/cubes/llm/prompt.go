@@ -2,8 +2,11 @@ package llm
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/invopop/jsonschema"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/packages/param"
 )
@@ -21,10 +24,10 @@ func NewOpenAi(client openai.Client) OpenAi {
 }
 
 type Request struct {
-	Prompt string `json:"prompt"`
-	Url    string `json:"url"`
-
-	Schema ToolSchema `json:"schema"`
+	Prompt    string     `json:"prompt"`
+	ImageURL  string     `json:"imageUrl"`
+	ImageByes []byte     `json:"imageData"`
+	Schema    ToolSchema `json:"schema"`
 }
 
 type ToolSchema struct {
@@ -34,6 +37,28 @@ type ToolSchema struct {
 }
 
 func (o OpenAi) Generate(ctx context.Context, req Request) (string, error) {
+	var imageContent openai.ChatCompletionContentPartUnionParam
+	if req.ImageByes != nil && len(req.ImageByes) > 0 {
+		imageContent = openai.ChatCompletionContentPartUnionParam{
+			OfImageURL: &openai.ChatCompletionContentPartImageParam{
+				ImageURL: openai.ChatCompletionContentPartImageImageURLParam{
+					URL:    fmt.Sprintf("data:image/png;base64,%s", base64.StdEncoding.EncodeToString(req.ImageByes)),
+					Detail: "high",
+				},
+			},
+		}
+	} else if req.ImageURL != "" {
+		imageContent = openai.ChatCompletionContentPartUnionParam{
+			OfImageURL: &openai.ChatCompletionContentPartImageParam{
+				ImageURL: openai.ChatCompletionContentPartImageImageURLParam{
+					URL:    req.ImageURL,
+					Detail: "high",
+				},
+			},
+		}
+	} else {
+		return "", errors.New("no image provided")
+	}
 	res, err := o.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 		Model: "gpt-4o",
 		Messages: []openai.ChatCompletionMessageParamUnion{
@@ -57,14 +82,8 @@ func (o OpenAi) Generate(ctx context.Context, req Request) (string, error) {
 									Text: req.Prompt,
 								},
 							},
-							{
-								OfImageURL: &openai.ChatCompletionContentPartImageParam{
-									ImageURL: openai.ChatCompletionContentPartImageImageURLParam{
-										URL:    req.Url,
-										Detail: "high",
-									},
-								},
-							},
+							// Add the image content
+							imageContent,
 						},
 					},
 				},
@@ -90,4 +109,27 @@ func (o OpenAi) Generate(ctx context.Context, req Request) (string, error) {
 		}
 	}
 	return "", errors.New("no tool call found")
+}
+
+func GenerateSchema(v any) map[string]any {
+	r := new(jsonschema.Reflector)
+	schema := r.Reflect(v)
+
+	raw, err := json.Marshal(schema)
+	if err != nil {
+		panic(err)
+	}
+
+	var top map[string]any
+	if err := json.Unmarshal(raw, &top); err != nil {
+		panic(err)
+	}
+
+	// Navigate to the definition referenced by $ref
+	ref := top["$ref"].(string) // e.g., "#/$defs/Card"
+	defs := top["$defs"].(map[string]any)
+	defKey := ref[len("#/$defs/"):] // "Card"
+	cardSchema := defs[defKey].(map[string]any)
+
+	return cardSchema
 }

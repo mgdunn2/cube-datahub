@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/invopop/jsonschema"
 	"github.com/mgdunn2/cube-datahub/cubes"
 	"github.com/mgdunn2/cube-datahub/cubes/llm"
 )
@@ -89,11 +88,11 @@ The mana cost of a Magic: The Gathering card is represented as a string of curly
     {X}{G}{G}
 
     {S}{S}{G}`,
-		Url: imageURL,
+		ImageURL: imageURL,
 		Schema: llm.ToolSchema{
 			Name:        "card",
 			Description: "A custom magic the gathering card.",
-			Schema:      GenerateSchema(cubes.LLMCardSchema{}),
+			Schema:      llm.GenerateSchema(cubes.LLMCardSchema{}),
 		},
 	}
 
@@ -113,27 +112,4 @@ The mana cost of a Magic: The Gathering card is represented as a string of curly
 	// Add the image URL!
 	card.ImageURI = imageURL
 	return card, nil
-}
-
-func GenerateSchema(v any) map[string]any {
-	r := new(jsonschema.Reflector)
-	schema := r.Reflect(v)
-
-	raw, err := json.Marshal(schema)
-	if err != nil {
-		panic(err)
-	}
-
-	var top map[string]any
-	if err := json.Unmarshal(raw, &top); err != nil {
-		panic(err)
-	}
-
-	// Navigate to the definition referenced by $ref
-	ref := top["$ref"].(string) // e.g., "#/$defs/Card"
-	defs := top["$defs"].(map[string]any)
-	defKey := ref[len("#/$defs/"):] // "Card"
-	cardSchema := defs[defKey].(map[string]any)
-
-	return cardSchema
 }
